@@ -76,6 +76,46 @@ class TestStage2IgnoreWhitespaceAndEmptyParts(unittest.TestCase):
         """Test empty part around negative numbers."""
         result = self.expander.expand(" -2   , 4 ")
         self.assertEqual(result, [-2, 4])
-        
+
+
+class TestStage3CustomRangeDelimiters(unittest.TestCase):
+    """Test Stage 3: Custom Range Delimiters functionality."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.expander = NumberRangeExpander()
+    
+    def test_dot_dot_delimiter(self):
+        """Test '..' delimiter."""
+        result = self.expander.expand("1..3")
+        self.assertEqual(result, [1, 2, 3])
+    
+    def test_tilde_delimiter(self):
+        """Test '~' delimiter."""
+        result = self.expander.expand("4~6")
+        self.assertEqual(result, [4, 5, 6])
+    
+    def test_to_delimiter(self):
+        """Test 'to' delimiter."""
+        result = self.expander.expand("10 to 12")
+        self.assertEqual(result, [10, 11, 12])
+    
+    def test_mixed_delimiters(self):
+        """Test mixed range delimiters in one string."""
+        result = self.expander.expand("1-3,4..6,7~9")
+        self.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9])
+    
+    def test_custom_delimiters(self):
+        """Test custom delimiter configuration."""
+        custom_expander = NumberRangeExpander(delimiters=["->", "until"])
+        result = custom_expander.expand("1 -> 3,5 until 7")
+        self.assertEqual(result, [1, 2, 3, 5, 6, 7])
+    
+    def test_delimiter_precedence(self):
+        """Test that longer delimiters take precedence."""
+        result = self.expander.expand("1..5")
+        self.assertEqual(result, [1, 2, 3, 4, 5])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
