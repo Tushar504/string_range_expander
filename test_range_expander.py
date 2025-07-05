@@ -116,6 +116,27 @@ class TestStage3CustomRangeDelimiters(unittest.TestCase):
         result = self.expander.expand("1..5")
         self.assertEqual(result, [1, 2, 3, 4, 5])
 
+class TestStage4HandleReversedorInvalidRangesGracefully(unittest.TestCase):
+    """Test Stage 4: Error Handling functionality."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.expander = NumberRangeExpander()
+    
+    def test_reverse_order_range(self):
+        """Test handling of invalid ranges."""
+        result = self.expander.expand("5..1")
+        self.assertEqual(result, [5, 4, 3, 2, 1])
+    
+    def test_non_numeric_input(self):
+        """Test handling of non-numeric input."""
+        with self.assertRaises(ValueError):
+            self.expander.expand("a-b")
+    
+    def test_mixed_valid_and_invalid_ranges(self):
+        """Test handling of mixed valid and invalid ranges."""
+        with self.assertRaises(ValueError):
+            self.expander.expand("1-3,5,a-7")
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
