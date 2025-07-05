@@ -38,11 +38,15 @@ class NumberRangeExpander:
                     end_str = part[dash_index + 1:]
                     start = int(start_str)
                     end = int(end_str)
+                    if start > end:
+                        return list(range(end, start + 1))[::-1]
                     return list(range(start, end + 1))
             elif len(part_) == 2 and part_[0].strip():
                 start_str, end_str = part_
                 start = int(start_str.strip())
                 end = int(end_str.strip())
+                if start > end:
+                    return list(range(end, start + 1))[::-1]
                 return list(range(start, end + 1))
         
         return [int(part)]
