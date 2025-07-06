@@ -271,6 +271,91 @@ class TestStage7OutputFormatControl(unittest.TestCase):
         with self.assertRaises(RangeExpanderError):
             self.expander.output_formatter = "invalid_format"
             self.expander.expand(self.test_string)
+            
+            
+class TestEdgeCasesAndComplexScenarios(unittest.TestCase):
+    """Test edge cases and complex scenarios."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.expander = NumberRangeExpander()
+    
+    def test_very_large_range(self):
+        """Test very large range."""
+        result = self.expander.expand("1-1000:100")
+        expected = [1, 101, 201, 301, 401, 501, 601, 701, 801, 901]
+        self.assertEqual(result, expected)
+    
+    def test_negative_ranges_with_steps(self):
+        """Test negative ranges with steps."""
+        result = self.expander.expand("-10--1:3")
+        self.assertEqual(result, [-10, -7, -4, -1])
+    
+    def test_mixed_positive_negative_ranges(self):
+        """Test mixed positive and negative ranges."""
+        result = self.expander.expand("-2-2")
+        self.assertEqual(result, [-2, -1, 0, 1, 2])
+    
+    def test_complex_delimiter_combinations(self):
+        """Test complex delimiter combinations."""
+        result = self.expander.expand("1-3,5..7,10~12,15 to 17")
+        expected = [1, 2, 3, 5, 6, 7, 10, 11, 12, 15, 16, 17]
+        self.assertEqual(result, expected)
+    
+    def test_performance_with_many_ranges(self):
+        """Test performance with many ranges."""
+        # Create a string with many small ranges
+        ranges = [f"{i}-{i+1}" for i in range(0, 100, 3)]
+        test_string = ",".join(ranges)
+        print(test_string)
+        result = self.expander.expand(test_string)
+        self.assertEqual(len(result), 68)
+    
+    def test_whitespace_in_custom_delimiters(self):
+        """Test whitespace handling with custom delimiters."""
+        result = self.expander.expand("1 to 3,5 to 7")
+        self.assertEqual(result, [1, 2, 3, 5, 6, 7])
+
+class TestErrorHandling(unittest.TestCase):
+    """Test error handling and validation."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.expander = NumberRangeExpander()
+    
+    def test_malformed_range_syntax(self):
+        """Test malformed range syntax."""
+        with self.assertRaises(RangeExpanderError):
+            self.expander.expand("1-2-3")
+    
+    def test_invalid_number_format(self):
+        """Test invalid number format."""
+        with self.assertRaises(RangeExpanderError):
+            self.expander.expand("1-2.5")
+    
+    def test_empty_range_parts(self):
+        """Test empty range parts."""
+        with self.assertRaises(RangeExpanderError):
+            self.expander.expand("1-")
+    
+    def test_non_numeric_step(self):
+        """Test non-numeric step value."""
+        with self.assertRaises(RangeExpanderError):
+            self.expander.expand("1-10:x")
+    
+    def test_helpful_error_messages(self):
+        """Test that error messages are helpful and specific."""
+        try:
+            self.expander.expand("1-a")
+        except RangeExpanderError as e:
+            self.assertIn("Invalid number", str(e))
+            self.assertIn("'a'", str(e))
+        
+        try:
+            self.expander.expand("1-10:0")
+        except RangeExpanderError as e:
+            self.assertIn("Step value cannot be zero", str(e))
+
 
 if __name__ == "__main__":
     # Create a test suite with all test cases
@@ -284,7 +369,9 @@ if __name__ == "__main__":
         TestStage4HandleReversedorInvalidRangesGracefully,
         TestStage5SupportStepValues,
         TestStage6DuplicateAndOverlappingRangeHandling,
-        TestStage7OutputFormatControl  
+        TestStage7OutputFormatControl,
+        TestEdgeCasesAndComplexScenarios,
+        TestErrorHandling
     ]
     
     for test_class in test_classes:
