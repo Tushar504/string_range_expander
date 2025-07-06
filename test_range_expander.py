@@ -1,5 +1,5 @@
 import unittest
-from number_range_expander import NumberRangeExpander
+from number_range_expander import NumberRangeExpander, RangeExpanderError
 
 class TestStage1BasicRangeExpansion(unittest.TestCase):
     def setUp(self):
@@ -128,15 +128,94 @@ class TestStage4HandleReversedorInvalidRangesGracefully(unittest.TestCase):
         result = self.expander.expand("5..1")
         self.assertEqual(result, [5, 4, 3, 2, 1])
     
+    def test_reverse_negative_numbers_range(self):
+        """Test handling of reversed negative number ranges."""
+        result = self.expander.expand("-5--1")
+        self.assertEqual(result, [-5, -4, -3, -2, -1])
+
     def test_non_numeric_input(self):
         """Test handling of non-numeric input."""
-        with self.assertRaises(ValueError):
+        with self.assertRaises(RangeExpanderError):
             self.expander.expand("a-b")
     
     def test_mixed_valid_and_invalid_ranges(self):
         """Test handling of mixed valid and invalid ranges."""
-        with self.assertRaises(ValueError):
+        with self.assertRaises(RangeExpanderError):
             self.expander.expand("1-3,5,a-7")
+            
+class TestStage5SupportStepValues(unittest.TestCase):
+    """Test Stage 5: Support Step Values functionality."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.expander = NumberRangeExpander()
+    
+    def test_basic_step_syntax(self):
+        """Test basic step syntax."""
+        result = self.expander.expand("1-10:2")
+        self.assertEqual(result, [1, 3, 5, 7, 9])
+    
+    def test_descending_step(self):
+        """Test descending step syntax."""
+        result = self.expander.expand("10-1:3")
+        self.assertEqual(result, [10, 7, 4, 1])
+    
+    def test_step_with_different_delimiters(self):
+        """Test step syntax with different range delimiters."""
+        result = self.expander.expand("1..10:2")
+        self.assertEqual(result, [1, 3, 5, 7, 9])
+    
+    def test_mixed_step_and_regular_ranges(self):
+        """Test mixing step and regular ranges."""
+        result = self.expander.expand("1-5:1,10-20:2")
+        self.assertEqual(result, [1, 2, 3, 4, 5, 10, 12, 14, 16, 18, 20])
+    
+    def test_step_larger_than_range(self):
+        """Test step larger than range."""
+        result = self.expander.expand("1-3:5")
+        self.assertEqual(result, [1])
+    
+    def test_invalid_step_syntax(self):
+        """Test invalid step syntax."""
+        with self.assertRaises(RangeExpanderError):
+            self.expander.expand("1-10:2:3")
+    
+    def test_zero_step(self):
+        """Test zero step value."""
+        with self.assertRaises(RangeExpanderError):
+            self.expander.expand("1-10:0")
+    
+    def test_step_with_single_number(self):
+        """Test step syntax with single number (should error)."""
+        with self.assertRaises(RangeExpanderError):
+            self.expander.expand("5:2")
 
 if __name__ == "__main__":
-    unittest.main(verbosity=2)
+    # Create a test suite with all test cases
+    test_suite = unittest.TestSuite()
+    
+    # Add all test classes
+    test_classes = [
+        TestStage1BasicRangeExpansion,
+        TestStage2IgnoreWhitespaceAndEmptyParts,
+        TestStage3CustomRangeDelimiters,
+        TestStage4HandleReversedorInvalidRangesGracefully,
+        TestStage5SupportStepValues  
+    ]
+    
+    for test_class in test_classes:
+        tests = unittest.TestLoader().loadTestsFromTestCase(test_class)
+        test_suite.addTests(tests)
+    
+    # Run the tests
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(test_suite)
+    
+    # Print summary
+    print(f"\n{'='*50}")
+    print(f"Test Summary:")
+    print(f"Tests run: {result.testsRun}")
+    print(f"Failures: {len(result.failures)}")
+    print(f"Errors: {len(result.errors)}")
+    print(f"Success rate: {((result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100):.1f}%")
+    print(f"{'='*50}")
