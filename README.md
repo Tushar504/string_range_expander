@@ -20,12 +20,22 @@ git clone <repo-url>
 cd string_range_expander
 ```
 
+## Requirements
+
+- **Python 3.7 or higher**
+  - All modules (`argparse`, `unittest`, etc.) used are part of the Python standard library.
+- **No external dependencies required.**
+
+**For testing:**
+- The built-in `unittest` module is used for all tests.  
+  (No need to install anything extra.)
+
 ## Usage
 
 ### As a CLI Tool
 Run directly from the command line:
 ```bash
-python number_range_expander.py --input_string "1-3,5,7-9"
+python number_range_expander.py --input_string="1-3,5,7-9"
 ```
 
 #### CLI Options
