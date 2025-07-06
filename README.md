@@ -12,6 +12,33 @@ A flexible Python utility to expand number ranges and sequences from strings. Su
 - Command-line interface (CLI) and Python API
 - Centralized, descriptive error messages
 
+## Performance Bottlenecks
+1. Large Range Expansion
+Problem: "1-10000000" creates 10 million integers
+Impact: High memory usage and processing time
+2. Complex Delimiter Parsing
+Problem: Multiple delimiters with ambiguous patterns
+Impact: O(d × m) parsing overhead per part 
+    - d: Number of delimiters (default: 4)
+    - m: Average length of each part being parsed
+    - Worst case: All delimiters are tried for each part
+3. Sorting Large Results
+Problem: allow_merged=True with large r
+Impact: O(r log r) sorting cost
+4. String Processing in Parsing
+Problem: Multiple string operations and splits
+Impact: Higher constant factors
+5 Output Formatting - O(r)
+    - List/Set formatting: O(r)
+    - CSV formatting: O(r) + string concatenation overhead
+
+## For production use, consider:
+- Setting maximum range limits
+- Using lazy evaluation for large datasets
+- Monitoring memory usage for large expansions
+- Implementing streaming for very large inputs
+
+
 ## Installation
 
 Clone the repository:
@@ -88,4 +115,6 @@ Run the test suite:
 ```bash
 python test_range_expander.py
 ```
+
+
 
