@@ -1,4 +1,10 @@
 from typing import List, Optional
+from output_formatter import (
+    OutputFormatter,
+    CsvStringFormatter,
+    PythonListFormatter,
+    PythonSetFormatter,
+)
 
 
 class RangeExpanderError(Exception):
@@ -15,12 +21,14 @@ class NumberRangeExpander:
         allow_reversed: bool = True,
         allow_merged: bool = False,
         allow_deduplicate: bool = False,
+        output_formatter: OutputFormatter = PythonListFormatter(),
     ):
         self.delimiters = delimiters or ("-", "to", "..", "~")
         self.step_delimeter = step_delimeter
         self.allow_reversed = allow_reversed
         self.allow_merged = allow_merged
         self.allow_deduplicate = allow_deduplicate
+        self.output_formatter = output_formatter
 
     def _parse_number(self, value: str) -> int:
         try:
@@ -92,6 +100,13 @@ class NumberRangeExpander:
 
         return [self._parse_number(part)]
 
+    def _format_output(self, expanded_numbers: List[int]) -> Optional[str]:
+        """Format the expanded numbers using the specified output formatter."""
+        if isinstance(self.output_formatter, OutputFormatter):
+            return self.output_formatter.format(expanded_numbers)
+        else:
+            raise RangeExpanderError("Invalid output formatter provided")
+
     def expand(self, input_string: str) -> List[int]:
         """Expand a string containing numbers and ranges into a list of integers."""
         if not input_string:
@@ -109,7 +124,7 @@ class NumberRangeExpander:
                 expanded_numbers.extend(expanded_part)
             except RangeExpanderError as e:
                 raise RangeExpanderError(f"Error parsing token '{part}': {e}")
-        
+
         if self.allow_deduplicate:
             seen = set()
             unique_numbers = []
@@ -121,8 +136,8 @@ class NumberRangeExpander:
 
         if self.allow_merged:
             expanded_numbers.sort()
-        
-        return expanded_numbers
+
+        return self._format_output(expanded_numbers)
 
 
 if __name__ == "__main__":
@@ -149,33 +164,50 @@ if __name__ == "__main__":
         default=["-", "..", "to", "~"],
         help="Range delimiters (default: - .. to ~)",
     )
-    
+
     parser.add_argument(
-        "--step-delimiter", "-s",
-        default=":",
-        help="Step delimiter (default: :)"
+        "--step-delimiter", "-s", default=":", help="Step delimiter (default: :)"
     )
-    
+
     parser.add_argument(
         "--no-reversed", action="store_true", help="Disallow reversed ranges"
     )
-    
+
     parser.add_argument(
         "--allow-merged", action="store_true", help="Allow merged ranges"
     )
-    
+
     parser.add_argument(
-        "--allow-deduplicate", action="store_true", help="Allow deduplication of numbers"
+        "--allow-deduplicate",
+        action="store_true",
+        help="Allow deduplication of numbers",
+    )
+
+    parser.add_argument(
+        "--output-formatter",
+        "-f",
+        choices=["csv", "list", "set"],
+        default="list",
+        help="Output format (default: list)",
     )
 
     args = parser.parse_args()
-    
+
     try:
         expander = NumberRangeExpander(
             delimiters=args.delimiters,
             allow_reversed=not args.no_reversed,
             allow_merged=args.allow_merged,
             allow_deduplicate=args.allow_deduplicate,
+            output_formatter=(
+                CsvStringFormatter()
+                if args.output_formatter == "csv"
+                else (
+                    PythonListFormatter()
+                    if args.output_formatter == "list"
+                    else PythonSetFormatter()
+                )
+            ),
         )
         expanded_numbers = expander.expand(args.input_string)
         print(expanded_numbers)

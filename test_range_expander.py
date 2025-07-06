@@ -1,5 +1,6 @@
 import unittest
 from number_range_expander import NumberRangeExpander, RangeExpanderError
+from output_formatter import CsvStringFormatter, PythonListFormatter, PythonSetFormatter
 
 class TestStage1BasicRangeExpansion(unittest.TestCase):
     def setUp(self):
@@ -235,6 +236,41 @@ class TestStage6DuplicateAndOverlappingRangeHandling(unittest.TestCase):
         expander_merged = NumberRangeExpander(allow_deduplicate=True, allow_merged=True)
         result = expander_merged.expand("4-7,1-3,2-5,4-6")
         self.assertEqual(result, [1, 2, 3, 4, 5, 6, 7])
+        
+        
+class TestStage7OutputFormatControl(unittest.TestCase):
+    """Test Stage 7: Output Format Control functionality."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.expander = NumberRangeExpander()
+        self.test_string = "1-3,5,7-9"
+    
+    def test_list_output_format(self):
+        """Test list output format."""
+        result = self.expander.expand(self.test_string)
+        self.assertIsInstance(result, list)
+        self.assertEqual(result, [1, 2, 3, 5, 7, 8, 9])
+    
+    def test_csv_output_format(self):
+        """Test CSV output format."""
+        self.expander.output_formatter = CsvStringFormatter()
+        result = self.expander.expand(self.test_string)
+        self.assertIsInstance(result, str)
+        self.assertEqual(result, "1,2,3,5,7,8,9")
+    
+    def test_set_output_format(self):
+        """Test set output format."""
+        self.expander.output_formatter = PythonSetFormatter()
+        result = self.expander.expand(self.test_string)
+        self.assertIsInstance(result, set)
+        self.assertEqual(result, {1, 2, 3, 5, 7, 8, 9})
+    
+    def test_invalid_output_format(self):
+        """Test invalid output format."""
+        with self.assertRaises(RangeExpanderError):
+            self.expander.output_formatter = "invalid_format"
+            self.expander.expand(self.test_string)
 
 if __name__ == "__main__":
     # Create a test suite with all test cases
@@ -247,7 +283,8 @@ if __name__ == "__main__":
         TestStage3CustomRangeDelimiters,
         TestStage4HandleReversedorInvalidRangesGracefully,
         TestStage5SupportStepValues,
-        TestStage6DuplicateAndOverlappingRangeHandling  
+        TestStage6DuplicateAndOverlappingRangeHandling,
+        TestStage7OutputFormatControl  
     ]
     
     for test_class in test_classes:
