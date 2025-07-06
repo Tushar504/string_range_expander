@@ -13,10 +13,14 @@ class NumberRangeExpander:
         delimiters: Optional[List[str]] = None,
         step_delimeter: str = ":",
         allow_reversed: bool = True,
+        allow_merged: bool = False,
+        allow_deduplicate: bool = False,
     ):
         self.delimiters = delimiters or ("-", "to", "..", "~")
         self.step_delimeter = step_delimeter
         self.allow_reversed = allow_reversed
+        self.allow_merged = allow_merged
+        self.allow_deduplicate = allow_deduplicate
 
     def _parse_number(self, value: str) -> int:
         try:
@@ -105,7 +109,19 @@ class NumberRangeExpander:
                 expanded_numbers.extend(expanded_part)
             except RangeExpanderError as e:
                 raise RangeExpanderError(f"Error parsing token '{part}': {e}")
+        
+        if self.allow_deduplicate:
+            seen = set()
+            unique_numbers = []
+            for num in expanded_numbers:
+                if num not in seen:
+                    seen.add(num)
+                    unique_numbers.append(num)
+            expanded_numbers = unique_numbers
 
+        if self.allow_merged:
+            expanded_numbers.sort()
+        
         return expanded_numbers
 
 
@@ -143,12 +159,23 @@ if __name__ == "__main__":
     parser.add_argument(
         "--no-reversed", action="store_true", help="Disallow reversed ranges"
     )
+    
+    parser.add_argument(
+        "--allow-merged", action="store_true", help="Allow merged ranges"
+    )
+    
+    parser.add_argument(
+        "--allow-deduplicate", action="store_true", help="Allow deduplication of numbers"
+    )
 
     args = parser.parse_args()
+    
     try:
         expander = NumberRangeExpander(
             delimiters=args.delimiters,
             allow_reversed=not args.no_reversed,
+            allow_merged=args.allow_merged,
+            allow_deduplicate=args.allow_deduplicate,
         )
         expanded_numbers = expander.expand(args.input_string)
         print(expanded_numbers)

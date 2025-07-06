@@ -189,6 +189,52 @@ class TestStage5SupportStepValues(unittest.TestCase):
         """Test step syntax with single number (should error)."""
         with self.assertRaises(RangeExpanderError):
             self.expander.expand("5:2")
+            
+            
+class TestStage6DuplicateAndOverlappingRangeHandling(unittest.TestCase):
+    """Test Stage 6: Duplicate and Overlapping Range Handling functionality."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.expander = NumberRangeExpander(allow_deduplicate=True, allow_merged=False)
+        self.expander_no_dedup = NumberRangeExpander(allow_deduplicate=False, allow_merged=False)
+        
+        
+    def test_overlapping_ranges_deduplicated(self):
+        """Test overlapping ranges with deduplication."""
+        result = self.expander.expand("1-3,2-5")
+        self.assertEqual(result, [1, 2, 3, 4, 5])
+    
+    def test_overlapping_ranges_not_deduplicated(self):
+        """Test overlapping ranges without deduplication."""
+        result = self.expander_no_dedup.expand("1-3,2-5")
+        self.assertEqual(result, [1, 2, 3, 2, 3, 4, 5])
+    
+    def test_duplicate_numbers_deduplicated(self):
+        """Test duplicate numbers with deduplication."""
+        result = self.expander.expand("1,2,3,2,1")
+        self.assertEqual(result, [1, 2, 3])
+    
+    def test_duplicate_numbers_not_deduplicated(self):
+        """Test duplicate numbers without deduplication."""
+        result = self.expander_no_dedup.expand("1,2,3,2,1")
+        self.assertEqual(result, [1, 2, 3, 2, 1])
+    
+    def test_complex_overlapping_pattern(self):
+        """Test complex overlapping pattern."""
+        result = self.expander.expand("1-5,3-7,6-10")
+        self.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    
+    def test_order_preservation_with_deduplication(self):
+        """Test that order is preserved when deduplicating."""
+        result = self.expander.expand("5,1-3,2,7")
+        self.assertEqual(result, [5, 1, 2, 3, 7])
+        
+    def test_order_with_merged_with_deduplication(self):
+        """Test that order is preserved when merging and deduplicating."""
+        expander_merged = NumberRangeExpander(allow_deduplicate=True, allow_merged=True)
+        result = expander_merged.expand("4-7,1-3,2-5,4-6")
+        self.assertEqual(result, [1, 2, 3, 4, 5, 6, 7])
 
 if __name__ == "__main__":
     # Create a test suite with all test cases
@@ -200,7 +246,8 @@ if __name__ == "__main__":
         TestStage2IgnoreWhitespaceAndEmptyParts,
         TestStage3CustomRangeDelimiters,
         TestStage4HandleReversedorInvalidRangesGracefully,
-        TestStage5SupportStepValues  
+        TestStage5SupportStepValues,
+        TestStage6DuplicateAndOverlappingRangeHandling  
     ]
     
     for test_class in test_classes:
